@@ -1,0 +1,176 @@
+<Symbol id="sample-complic">
+    <Define>
+        COLOUR_BLACK = "#000000"
+        COLOUR_GREY = "#808080"
+        COLOUR_AZURE = "#0070e0"
+        COLOUR_SPRING_GREEN = "#00c060"
+        COLOUR_ORANGE = "#e07000"
+        COLOUR_ROSE = "#e00070"
+        COLOUR_WHITE = "#ffffff"
+        if 'BORDER_THICKNESS' not in dir(): BORDER_THICKNESS = 4    # won't override a prior definition
+        CONTENT_OVERLAP = 1         # pixels on each side by which to enlarge content area
+        FONT_SIZE_FACTOR = 0.91     # font size as proportion of CONTENT_HEIGHT
+        def centre(parent_size, self_size): return round((parent_size-self_size)/2)
+        def set_sizes(complic_width, complic_height):
+            global CONTENT_WIDTH, CONTENT_HEIGHT
+            CONTENT_WIDTH = complic_width - BORDER_THICKNESS * 2 + CONTENT_OVERLAP * 2
+            CONTENT_HEIGHT = complic_height - BORDER_THICKNESS * 2 + CONTENT_OVERLAP * 2
+    </Define>
+
+    <ComplicationSlot
+        displayName="complic_gp"
+        isCustomizable="TRUE"
+        supportedTypes="GOAL_PROGRESS EMPTY"
+        data-colour-info="{COLOUR_WHITE}"
+        data-colour-low-start="{COLOUR_AZURE}"
+        data-colour-low-end="{COLOUR_SPRING_GREEN}"
+        data-colour-high-start="{COLOUR_ORANGE}"
+        data-colour-high-end="{COLOUR_ROSE}"
+        data-colour-border="{COLOUR_GREY}"
+        data-colour-background="{COLOUR_BLACK}">
+
+        <Symbol id="icon">
+            <Symbol id="icon-variant">
+                <PartImage
+                    width="{CONTENT_HEIGHT}"
+                    height="{CONTENT_HEIGHT}"
+                    y="{BORDER_THICKNESS}"
+                    tintColor="{'PARENT.data-colour-info' if SELF.alpha==255 else COLOUR_WHITE}"
+                    alpha="255">
+                    <Variant mode="AMBIENT" target="alpha" value="{255 - PARENT.alpha}" />
+                    <Image
+                        resource="{'[COMPLICATION.MONOCHROMATIC_IMAGE]' if PARENT.alpha==255 else '[COMPLICATION.MONOCHROMATIC_IMAGE_AMBIENT]'}"/>
+                </PartImage>
+            </Symbol>
+            <Use href="icon-variant" />             <!-- interactive -->
+            <Use href="icon-variant" alpha="0"/>    <!-- ambient (AOD) -->
+        </Symbol>
+
+        <Symbol id="text">
+            <Symbol id="text-variant">
+                <PartText
+                    x="{round(CONTENT_HEIGHT * 1.5)}"
+                    y="0"
+                    height="{PARENT}"
+                    width="{PARENT - SELF.x}"
+                    data-align="'CENTER'"
+                    alpha = "255">
+                    <Variant mode="AMBIENT" target="alpha" value="{255 - PARENT.alpha}" />
+                    <Text
+                        align="{PARENT.data-align}"
+                        ellipsis="TRUE">
+                        <Font
+                            color="{'PARENT.data-colour-info' if PARENT.alpha==255 else COLOUR_WHITE}"
+                            family="SYNC_TO_DEVICE"
+                            size="{CONTENT_HEIGHT * FONT_SIZE_FACTOR}"
+                            slant="NORMAL"
+                            weight="NORMAL">
+                            <Template>%s
+                                <Parameter expression="[COMPLICATION.TEXT]" />
+                            </Template>
+                        </Font>
+                    </Text>
+                </PartText>
+            </Symbol>
+            <Use href="text-variant" />             <!-- interactive -->
+            <Use href="text-variant" alpha="0"/>    <!-- ambient (AOD) -->
+        </Symbol>
+
+        <BoundingRoundBox
+            height="{PARENT}"
+            width="{PARENT}"
+            x="0"
+            y="0"
+            cornerRadius="{SELF.height/2}"/>
+
+        <!-- Define some Python constants required for some Symbols: -->
+        {set_sizes(PARENT.width,PARENT.height)}
+
+        <Complication type="GOAL_PROGRESS">
+            <!-- PROGRESS BARS -->
+            <PartDraw
+                x="{BORDER_THICKNESS - CONTENT_OVERLAP}"
+                y="{BORDER_THICKNESS - CONTENT_OVERLAP}"
+                width="{CONTENT_WIDTH}"
+                height="{CONTENT_WIDTH}">
+
+                <Variant mode="AMBIENT" target="alpha" value="0" />
+
+                <!-- Background -->
+                <Rectangle
+                    x="0"
+                    y="0"
+                    width="{CONTENT_WIDTH}"
+                    height="{CONTENT_HEIGHT}">
+                    <Fill color="{'PARENT.data-colour-background'}"/>
+                </Rectangle>
+                <!-- 0 to 100% -->
+                <Rectangle
+                    x="0"
+                    y="0"
+                    width="{CONTENT_WIDTH}"
+                    height="{CONTENT_HEIGHT}">
+                    <Transform target="width" value="[COMPLICATION.GOAL_PROGRESS_VALUE] / [COMPLICATION.GOAL_PROGRESS_TARGET_VALUE] * {CONTENT_WIDTH}"/>
+                    <Fill color="#ffffff">
+                        <LinearGradient
+                            startX="{PARENT.x}"
+                            startY="0"
+                            endX="{CONTENT_WIDTH}"
+                            endY="0"
+                            colors = "{'PARENT.data-colour-low-start'} {'PARENT.data-colour-low-end'}"
+                            positions = "0 1"/>
+                    </Fill>
+                </Rectangle>
+                <!-- over 100% -->
+                <Rectangle
+                    x="{-CONTENT_WIDTH}"
+                    y="0"
+                    width="{CONTENT_WIDTH}"
+                    height="{CONTENT_HEIGHT}">
+                    <Transform target="width" value="[COMPLICATION.GOAL_PROGRESS_VALUE] / [COMPLICATION.GOAL_PROGRESS_TARGET_VALUE] * {CONTENT_WIDTH}"/>
+                    <Fill color="#ffffff">
+                        <LinearGradient
+                            startX="{PARENT.x}"
+                            startY="0"
+                            endX="{CONTENT_WIDTH}"
+                            endY="0"
+                            colors = "{'PARENT.data-colour-high-start'} {'PARENT.data-colour-high-end'}"
+                            positions = "0.5 1"/>
+                    </Fill>
+                </Rectangle>
+            </PartDraw>
+
+            <!-- BORDER (RIM) -->
+            <PartDraw x="0" y="0" width="{PARENT}" height="{PARENT}">
+                <RoundRectangle
+                    x="{BORDER_THICKNESS / 2}"
+                    y="{BORDER_THICKNESS / 2}"
+                    width="{PARENT - BORDER_THICKNESS}"
+                    height="{PARENT - BORDER_THICKNESS}"
+                    cornerRadiusX="{SELF.height / 2}"
+                    cornerRadiusY="{SELF.height / 2}" >
+                    <Stroke color="{'PARENT.data-colour-border'}" thickness="{BORDER_THICKNESS}" />
+                </RoundRectangle>
+            </PartDraw>
+
+            <!-- INFO OVERLAY -->
+            <Condition>
+                <Expressions>
+                    <Expression name="iconOnly">[COMPLICATION.MONOCHROMATIC_IMAGE] != null &amp;&amp; [COMPLICATION.TEXT] == null</Expression>
+                    <Expression name="textOnly">[COMPLICATION.MONOCHROMATIC_IMAGE] == null &amp;&amp; [COMPLICATION.TEXT] != null</Expression>
+                    <Expression name="textAndIcon">[COMPLICATION.MONOCHROMATIC_IMAGE] != null &amp;&amp; [COMPLICATION.TEXT] != null</Expression>
+                </Expressions>
+                <Compare expression="iconOnly">
+                    <Use href="icon" x="{centre(PARENT.width, SELF.width)}"/>
+                </Compare>
+                <Compare expression="textOnly">
+                    <Use href="text" x="0"/>
+                </Compare>
+                <Compare expression="textAndIcon">
+                    <Use href="icon" x="{round(CONTENT_HEIGHT / 2)}"/>
+                    <Use href="text" data-align="'START'"/>
+                </Compare>
+            </Condition>
+        </Complication>
+    </ComplicationSlot>
+</Symbol>

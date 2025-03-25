@@ -1,0 +1,4 @@
+name: wff-sample-complic-pkg
+version: 1.0.0
+description: Minimalistic Watch Face Format Complication Slot
+watchFaceFormatVersion: 2
